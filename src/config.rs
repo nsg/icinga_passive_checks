@@ -24,6 +24,7 @@ pub fn load_config() -> IcingaConfig {
             "config.toml".to_string(),
             format!("{}/.icinga_passive_checks.toml", home),
             format!("{}/.config/icinga_passive_checks.toml", home),
+            "/etc/icinga_passive_checks.toml".to_string(),
         ];
 
         config_paths.into_iter()
