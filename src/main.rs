@@ -6,6 +6,7 @@ mod checks;
 mod pings;
 mod config;
 mod update;
+mod systemd;
 
 fn get_hostname() -> String {
     env::var("HOSTNAME").unwrap_or_else(|_| {
@@ -26,6 +27,24 @@ struct Args {
     /// Download and install the latest update
     #[arg(long)]
     update: bool,
+
+    /// Show sample systemd service
+    #[arg(long)]
+    service: bool,
+}
+
+fn install_service() -> Result<(), std::io::Error> {
+    let service = systemd::SystemdService {
+        name: "icinga-passive-checks".to_string(),
+        description: "Icinga2 Passive Checks Service".to_string(),
+        exec_start: update::running_binary_path().unwrap(),
+        after: vec!["network.target".to_string()],
+    };
+
+    let unit_file = systemd::generate_unit_content(&service);
+    println!("{}", unit_file);
+
+    Ok(())
 }
 
 fn main() {
@@ -52,6 +71,11 @@ fn main() {
             },
             Err(e) => eprintln!("Error determining binary path: {}", e),
         }
+        return;
+    }
+
+    if args.service {
+        let _ = install_service();
         return;
     }
 
