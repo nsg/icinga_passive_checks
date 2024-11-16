@@ -37,6 +37,9 @@ jobs:
     runs-on: ubuntu-20.04
     needs: prepare
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Build Project
         run: cargo build --release
 
@@ -53,6 +56,9 @@ jobs:
     runs-on: ubuntu-22.04
     needs: prepare
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Build Project
         run: cargo build --release
 
@@ -69,6 +75,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs: prepare
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Build Project
         run: cargo build --release
 
