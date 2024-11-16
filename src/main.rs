@@ -84,7 +84,7 @@ fn main() {
         let update_status = update::check_for_updates(env!("CARGO_PKG_VERSION"));
         match update_status {
             Ok(true) => println!("An update is available"),
-            Ok(false) => println!("No updates available"),
+            Ok(false) => println!("No updates available ({})", env!("CARGO_PKG_VERSION")),
             Err(e) => eprintln!("Error checking for updates: {}", e),
         }
         return;

@@ -38,7 +38,7 @@ pub fn check_for_updates(current_version: &str) -> Result<bool, Box<dyn Error>> 
     let release: GitHubRelease = response.json()?;
     let latest_version = release.tag_name.trim_start_matches('v');
 
-    if latest_version == current_version {
+    if latest_version != current_version {
         Ok(true)
     } else {
         Ok(false)
