@@ -1,6 +1,7 @@
 use clap::Parser;
 use std::env;
 use std::path::Path;
+use std::fs;
 
 mod checks;
 mod pings;
@@ -47,6 +48,30 @@ fn install_service() -> Result<(), std::io::Error> {
     Ok(())
 }
 
+fn read_lsb_release() -> Option<String> {
+    if let Ok(content) = fs::read_to_string("/etc/lsb-release") {
+        let mut is_ubuntu = false;
+        let mut version = None;
+
+        for line in content.lines() {
+            if line == "DISTRIB_ID=Ubuntu" {
+                is_ubuntu = true;
+            }
+            if line.starts_with("DISTRIB_RELEASE=") {
+                version = line.split('=').nth(1).map(String::from);
+            }
+        }
+
+        if is_ubuntu {
+            version
+        } else {
+            None
+        }
+    } else {
+        None
+    }
+}
+
 fn main() {
     let args = Args::parse();
     let config = config::load_config();
@@ -57,16 +82,27 @@ fn main() {
 
     if args.check_update {
         let update_status = update::check_for_updates(env!("CARGO_PKG_VERSION"));
-        println!("Update check: {:?}", update_status);
+        match update_status {
+            Ok(true) => println!("An update is available"),
+            Ok(false) => println!("No updates available"),
+            Err(e) => eprintln!("Error checking for updates: {}", e),
+        }
         return;
     }
 
     if args.update {
         match update::running_binary_path() {
             Ok(path) => {
-                match update::download_release_asset("v0.1.0", "icinga_passive_checks", Path::new(&path)) {
-                    Ok(_) => println!("Update downloaded successfully"),
-                    Err(e) => eprintln!("Error downloading update: {}", e),
+                let update_status = update::check_for_updates(env!("CARGO_PKG_VERSION")).expect("Error checking for updates");
+                let ubuntu_version = read_lsb_release().expect("This program requires Ubuntu");
+                let asset_name = format!("icinga_passive_checks.x86_64-ubuntu{}", ubuntu_version);
+                let latest_version = update::get_latest_version().expect("Error getting latest version");
+
+                if update_status {
+                    match update::download_release_asset(&latest_version, &asset_name, Path::new(&path)) {
+                        Ok(_) => println!("Update downloaded successfully"),
+                        Err(e) => eprintln!("Error downloading update: {}", e),
+                    }
                 }
             },
             Err(e) => eprintln!("Error determining binary path: {}", e),

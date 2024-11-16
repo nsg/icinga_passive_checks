@@ -17,7 +17,18 @@ struct GitHubRelease {
     assets: Vec<Asset>,
 }
 
-pub fn check_for_updates(current_version: &str) -> Result<String, Box<dyn Error>> {
+pub fn get_latest_version() -> Result<String, Box<dyn Error>> {
+    let client = blocking::Client::new();
+    let response = client
+        .get("https://api.github.com/repos/nsg/icinga_passive_checks/releases/latest")
+        .header("User-Agent", "icinga-passive-checks-update-checker")
+        .send()?;
+
+    let release: GitHubRelease = response.json()?;
+    Ok(release.tag_name)
+}
+
+pub fn check_for_updates(current_version: &str) -> Result<bool, Box<dyn Error>> {
     let client = blocking::Client::new();
     let response = client
         .get("https://api.github.com/repos/nsg/icinga_passive_checks/releases/latest")
@@ -28,12 +39,9 @@ pub fn check_for_updates(current_version: &str) -> Result<String, Box<dyn Error>
     let latest_version = release.tag_name.trim_start_matches('v');
 
     if latest_version != current_version {
-        Ok(format!(
-            "Update available: v{} -> v{}",
-            current_version, latest_version
-        ))
+        Ok(true)
     } else {
-        Ok("Up to date".to_string())
+        Ok(false)
     }
 }
 
