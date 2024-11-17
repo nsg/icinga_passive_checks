@@ -27,6 +27,18 @@ name = "webserver"
 host = "10.0.0.5"
 ```
 
+## Report from scripts
+
+```bash
+icinga_passive_checks --control --check zpool --status 0 --message 'Pool OK'
+```
+
+If you prefer to use NC instead to talk with the control socket directly do this:
+
+```bash
+echo "report|$HOSTNAME|zpool|0|Pool OK" | nc -U /run/icinga_passive_checks/control.sock
+```
+
 ## Icinga configuration
 
 I use something like below. The important part is that the host need to match the hostname, and the services need to match `Passive Ping: {name}` for ping checks.
@@ -39,9 +51,26 @@ object Host "server1" {
     "router",
     "webserver"
   ]
+
+  vars.passive_command_host = [
+    "zpool",
+  ]
+
 }
 
 apply Service "Passive Ping: " for (config in host.vars.passive_ping_host) {
+  import "generic-service"
+
+  enable_active_checks = true
+  enable_passive_checks = true
+  check_command = "dummy"
+  check_interval = 10m
+
+  vars.dummy_text = "No Passive Check Result Received"
+  vars.dummy_state = "3"
+}
+
+apply Service "Passive Command: " for (config in host.vars.passive_command_host) {
   import "generic-service"
 
   enable_active_checks = true

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use crate::checks::{self, CheckResult};
 use crate::config;
 
-pub const SOCKET_PATH: &str = "/tmp/icinga_checks.sock";
+pub const SOCKET_PATH: &str = "/run/icinga_passive_checks/control.sock";
 
 pub fn start_control_socket() -> std::io::Result<()> {
     let socket = PathBuf::from(SOCKET_PATH);
@@ -43,14 +43,14 @@ fn handle_command(stream: &mut UnixStream, command: &str) {
             checks::send_passive_check(
                 check_source,
                 check_name,
-                "127.0.0.1",
+                check_source, // use check_source as host since it's the hostname
                 "Passive Command",
                 &check_data,
                 &config
             );
             "report sent"
         }
-        _ => "unknown command (valid: status, ping, report|<source>|<name>|<exit_status>|<output>)",
+        _ => "unknown command",
     };
     
     let _ = stream.write_all(response.as_bytes());
