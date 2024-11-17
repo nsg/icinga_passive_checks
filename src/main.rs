@@ -19,7 +19,7 @@ fn get_hostname() -> String {
 }
 
 #[derive(Parser, Debug)]
-#[command(version, about)]
+#[command(version, about, arg_required_else_help(true))]
 struct Args {
     /// Check if updates are available
     #[arg(long)]
@@ -32,6 +32,10 @@ struct Args {
     /// Show sample systemd service
     #[arg(long)]
     service: bool,
+
+    /// Run in daemon mode
+    #[arg(long)]
+    daemon: bool,
 }
 
 fn install_service() -> Result<(), std::io::Error> {
@@ -111,8 +115,13 @@ fn main() {
         return;
     }
 
-    // Normal operation
-    for ping in &config.pings {
-        pings::ping_host(&get_hostname(), &ping.name, &ping.host, &config);
+    if args.daemon {
+        println!("Running in daemon mode, I wil run every {} seconds.", config.sleep_duration);
+        loop {
+            for ping in &config.pings {
+                pings::ping_host(&get_hostname(), &ping.name, &ping.host, &config);
+            }
+            std::thread::sleep(std::time::Duration::from_secs(config.sleep_duration));
+        }
     }
 }

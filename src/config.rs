@@ -9,6 +9,7 @@ pub struct IcingaConfig {
     pub api_password: String,
     pub debug: bool,
     pub pings: Vec<PingConfig>,
+    pub sleep_duration: u64,
 }
 
 #[derive(Debug)]
@@ -99,6 +100,14 @@ pub fn load_config() -> IcingaConfig {
         None => Vec::new(),
     };
 
+    let sleep_duration = match config_data.get("daemon")
+        .and_then(|d| d.as_table())
+        .and_then(|d| d.get("sleep_duration"))
+        .and_then(|v| v.as_integer()) {
+        Some(duration) => duration as u64,
+        None => 60,
+    };
+
     IcingaConfig {
         config_path,
         api_url,
@@ -106,5 +115,6 @@ pub fn load_config() -> IcingaConfig {
         api_password,
         debug,
         pings,
+        sleep_duration,
     }
 }

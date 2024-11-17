@@ -15,6 +15,9 @@ api_password = "your-api-password"
 [command]
 debug = false
 
+[daemon]
+sleep_duration = 300
+
 [[ping]]
 name = "router"
 host = "192.168.1.1"
