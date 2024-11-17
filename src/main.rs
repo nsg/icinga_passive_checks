@@ -8,6 +8,7 @@ mod pings;
 mod config;
 mod update;
 mod systemd;
+mod control;
 
 fn get_hostname() -> String {
     env::var("HOSTNAME").unwrap_or_else(|_| {
@@ -36,6 +37,22 @@ struct Args {
     /// Run in daemon mode
     #[arg(long)]
     daemon: bool,
+
+    /// Send command to running daemon
+    #[arg(long)]
+    control: bool,
+
+    /// Check name for control command
+    #[arg(long, requires = "control")]
+    check: Option<String>,
+
+    /// Status code for control command
+    #[arg(long, requires = "control")]
+    status: Option<i32>,
+
+    /// Message for control command
+    #[arg(long, requires = "control")]
+    message: Option<String>,
 }
 
 fn install_service() -> Result<(), std::io::Error> {
@@ -115,8 +132,30 @@ fn main() {
         return;
     }
 
+    if args.control {
+        let hostname = get_hostname();
+        if let (Some(check), Some(status), Some(message)) = (args.check, args.status, args.message) {
+            let command = format!("report|{}|{}|{}|{}", hostname, check, status, message);
+            match control::send_command(&command) {
+                Ok(response) => println!("Response: {}", response),
+                Err(e) => eprintln!("Failed to send command: {}", e),
+            }
+        } else {
+            eprintln!("Missing required arguments for control command. Need --check, --status, and --message");
+        }
+        return;
+    }
+
     if args.daemon {
-        println!("Running in daemon mode, I wil run every {} seconds.", config.sleep_duration);
+        println!("Running in daemon mode, I will run every {} seconds.", config.sleep_duration);
+        
+        // Start control socket in a separate thread
+        std::thread::spawn(|| {
+            if let Err(e) = control::start_control_socket() {
+                eprintln!("Failed to start control socket: {}", e);
+            }
+        });
+
         loop {
             for ping in &config.pings {
                 pings::ping_host(&get_hostname(), &ping.name, &ping.host, &config);
