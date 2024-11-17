@@ -19,6 +19,7 @@ pub fn generate_unit_content(description: &str, exec_start: &str) -> String {
         ("PrivateTmp", "true".to_string()),
         ("RestrictSUIDSGID", "true".to_string()),
         ("RestrictNamespaces", "true".to_string()),
+        ("RuntimeDirectory", "icinga_passive_checks".to_string()),
     ]);
 
     sections.insert("Install", vec![
