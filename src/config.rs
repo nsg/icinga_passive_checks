@@ -18,25 +18,22 @@ pub struct PingConfig {
 }
 
 pub fn load_config() -> IcingaConfig {
-    let config_path = if let Some(home) = std::env::var_os("HOME") {
+    let mut config_paths = vec!["config.toml".to_string()];
+    
+    if let Some(home) = std::env::var_os("HOME") {
         let home = home.to_string_lossy();
-        let config_paths = [
-            "config.toml".to_string(),
-            format!("{}/.icinga_passive_checks.toml", home),
-            format!("{}/.config/icinga_passive_checks.toml", home),
-            "/etc/icinga_passive_checks.toml".to_string(),
-        ];
+        config_paths.push(format!("{}/.icinga_passive_checks.toml", home));
+        config_paths.push(format!("{}/.config/icinga_passive_checks.toml", home));
+    }
+    
+    config_paths.push("/etc/icinga_passive_checks.toml".to_string());
 
-        config_paths.into_iter()
-            .find(|path| std::path::Path::new(path).exists())
-            .unwrap_or_else(|| {
-                println!("Error: No config file found in standard locations");
-                std::process::exit(1);
-            })
-    } else {
-        println!("Error: Unable to determine HOME directory");
-        std::process::exit(1);
-    };
+    let config_path = config_paths.into_iter()
+        .find(|path| std::path::Path::new(path).exists())
+        .unwrap_or_else(|| {
+            println!("Error: No config file found in standard locations");
+            std::process::exit(1);
+        });
 
     let config_content = fs::read_to_string(&config_path)
         .expect(&format!("Failed to read config file: {}", config_path));
