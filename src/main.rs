@@ -35,14 +35,10 @@ struct Args {
 }
 
 fn install_service() -> Result<(), std::io::Error> {
-    let service = systemd::SystemdService {
-        name: "icinga-passive-checks".to_string(),
-        description: "Icinga2 Passive Checks Service".to_string(),
-        exec_start: update::running_binary_path().unwrap(),
-        after: vec!["network.target".to_string()],
-    };
-
-    let unit_file = systemd::generate_unit_content(&service);
+    let unit_file = systemd::generate_unit_content(
+        "Icinga2 Passive Checks Service",
+        &update::running_binary_path().unwrap()
+    );
     println!("{}", unit_file);
 
     Ok(())

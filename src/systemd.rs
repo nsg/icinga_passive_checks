@@ -1,12 +1,5 @@
 use serde::Serialize;
 
-pub struct SystemdService {
-    pub name: String,
-    pub description: String,
-    pub exec_start: String,
-    pub after: Vec<String>,
-}
-
 #[derive(Serialize)]
 struct UnitFile {
     #[serde(rename = "Unit")]
@@ -23,6 +16,8 @@ struct UnitSection {
     description: String,
     #[serde(rename = "After")]
     after: String,
+    #[serde(rename = "Requires")]
+    requires: String,
 }
 
 #[derive(Serialize)]
@@ -51,14 +46,15 @@ struct InstallSection {
     wanted_by: String,
 }
 
-pub fn generate_unit_content(service: &SystemdService) -> String {
+pub fn generate_unit_content(description: &str, exec_start: &str) -> String {
     let unit_file = UnitFile {
         unit: UnitSection {
-            description: service.description.clone(),
-            after: service.after.join(" "),
+            description: description.to_string(),
+            after: "network-online.target".to_string(),
+            requires: "network-online.target".to_string(),
         },
         service: ServiceSection {
-            exec_start: service.exec_start.clone(),
+            exec_start: exec_start.to_string(),
             dynamic_user: true,
             no_new_privileges: true,
             protect_system: "strict".to_string(),
