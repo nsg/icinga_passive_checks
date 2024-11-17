@@ -1,72 +1,39 @@
-use serde::Serialize;
-
-#[derive(Serialize)]
-struct UnitFile {
-    #[serde(rename = "Unit")]
-    unit: UnitSection,
-    #[serde(rename = "Service")]
-    service: ServiceSection,
-    #[serde(rename = "Install")]
-    install: InstallSection,
-}
-
-#[derive(Serialize)]
-struct UnitSection {
-    #[serde(rename = "Description")]
-    description: String,
-    #[serde(rename = "After")]
-    after: String,
-    #[serde(rename = "Requires")]
-    requires: String,
-}
-
-#[derive(Serialize)]
-struct ServiceSection {
-    #[serde(rename = "ExecStart")]
-    exec_start: String,
-    #[serde(rename = "DynamicUser")]
-    dynamic_user: bool,
-    #[serde(rename = "NoNewPrivileges")]
-    no_new_privileges: bool,
-    #[serde(rename = "ProtectSystem")]
-    protect_system: String,
-    #[serde(rename = "ProtectHome")]
-    protect_home: bool,
-    #[serde(rename = "PrivateDevices")]
-    private_devices: bool,
-    #[serde(rename = "PrivateTmp")]
-    private_tmp: bool,
-    #[serde(rename = "RestrictSUIDSGID")]
-    restrict_suid_sgid: bool,
-}
-
-#[derive(Serialize)]
-struct InstallSection {
-    #[serde(rename = "WantedBy")]
-    wanted_by: String,
-}
+use std::collections::HashMap;
 
 pub fn generate_unit_content(description: &str, exec_start: &str) -> String {
-    let unit_file = UnitFile {
-        unit: UnitSection {
-            description: description.to_string(),
-            after: "network-online.target".to_string(),
-            requires: "network-online.target".to_string(),
-        },
-        service: ServiceSection {
-            exec_start: exec_start.to_string(),
-            dynamic_user: true,
-            no_new_privileges: true,
-            protect_system: "strict".to_string(),
-            protect_home: true,
-            private_devices: true,
-            private_tmp: true,
-            restrict_suid_sgid: true,
-        },
-        install: InstallSection {
-            wanted_by: "multi-user.target".to_string(),
-        },
-    };
+    let mut sections: HashMap<&str, Vec<(&str, String)>> = HashMap::new();
+    
+    sections.insert("Unit", vec![
+        ("Description", description.to_string()),
+        ("After", "network-online.target".to_string()),
+        ("Requires", "network-online.target".to_string()),
+    ]);
 
-    toml::to_string(&unit_file).unwrap_or_default()
+    sections.insert("Service", vec![
+        ("ExecStart", exec_start.to_string()),
+        ("DynamicUser", "true".to_string()),
+        ("NoNewPrivileges", "true".to_string()),
+        ("ProtectSystem", "strict".to_string()),
+        ("ProtectHome", "true".to_string()),
+        ("PrivateDevices", "true".to_string()),
+        ("PrivateTmp", "true".to_string()),
+        ("RestrictSUIDSGID", "true".to_string()),
+        ("RestrictNamespaces", "true".to_string()),
+    ]);
+
+    sections.insert("Install", vec![
+        ("WantedBy", "multi-user.target".to_string()),
+    ]);
+
+    let mut content = String::new();
+    
+    for (section, pairs) in &sections {
+        content.push_str(&format!("[{}]\n", section));
+        for (key, value) in pairs {
+            content.push_str(&format!("{}={}\n", key, value));
+        }
+        content.push('\n');
+    }
+
+    content.trim_end().to_string()
 }
