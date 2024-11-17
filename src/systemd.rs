@@ -10,7 +10,7 @@ pub fn generate_unit_content(description: &str, exec_start: &str) -> String {
     ]);
 
     sections.insert("Service", vec![
-        ("ExecStart", exec_start.to_string()),
+        ("ExecStart", format!("{} --daemon", exec_start)),
         ("DynamicUser", "true".to_string()),
         ("NoNewPrivileges", "true".to_string()),
         ("ProtectSystem", "strict".to_string()),
